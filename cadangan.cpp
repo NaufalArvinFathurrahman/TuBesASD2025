@@ -1,21 +1,18 @@
 #include <iostream>
 #include <cstring>
-#include <fstream> 
 
 using namespace std;
 
-// --- 1. Definisi Struktur Data ---
 typedef struct {
     char nama[100];
-    int pengurangan; 
+    int pengurangan;
 } Proyek;
 
 typedef struct {
-    Proyek data[100]; 
-    int size;         
+    Proyek data[100];
+    int size;
 } MaxHeap;
 
-// --- 2. Fungsi Helper & Status Heap ---
 void initHeap(MaxHeap *heap) {
     heap->size = 0;
 }
@@ -34,14 +31,13 @@ void swapProyek(Proyek *a, Proyek *b) {
     *b = temp;
 }
 
-// --- 3. Logika Max-Heap (Heapify) ---
 void heapifyUp(MaxHeap *heap, int index) {
-    if (index == 0) return; 
+    if (index == 0) return;
 
     int parentIndex = (index - 1) / 2;
     if (heap->data[index].pengurangan > heap->data[parentIndex].pengurangan) {
         swapProyek(&heap->data[index], &heap->data[parentIndex]);
-        heapifyUp(heap, parentIndex); 
+        heapifyUp(heap, parentIndex);
     }
 }
 
@@ -60,11 +56,10 @@ void heapifyDown(MaxHeap *heap, int index) {
 
     if (largest != index) {
         swapProyek(&heap->data[index], &heap->data[largest]);
-        heapifyDown(heap, largest); 
+        heapifyDown(heap, largest);
     }
 }
 
-// --- 4. Fungsi Wajib Program ---
 void insert(MaxHeap *heap, const char* nama, int pengurangan) {
     if (isFull(heap)) {
         cout << "[Gagal] Antrian Penuh!" << endl;
@@ -72,7 +67,8 @@ void insert(MaxHeap *heap, const char* nama, int pengurangan) {
     }
 
     int currentIndex = heap->size;
-    strcpy(heap->data[currentIndex].nama, nama);
+    strncpy(heap->data[currentIndex].nama, nama, 99);
+    heap->data[currentIndex].nama[99] = '\0';
     heap->data[currentIndex].pengurangan = pengurangan;
     heap->size++;
 
@@ -101,7 +97,7 @@ void peekMax(MaxHeap *heap) {
         cout << "[Info] Antrian Kosong." << endl;
         return;
     }
-    cout << "\n[PEEK] Prioritas Tertinggi: " << heap->data[0].nama 
+    cout << "\n[PEEK] Prioritas Tertinggi: " << heap->data[0].nama
          << " (" << heap->data[0].pengurangan << " kg CO2e)" << endl;
 }
 
@@ -113,14 +109,18 @@ void displayHeap(MaxHeap *heap) {
 
     cout << "\n=== DAFTAR SEMUA PROYEK (URUTAN HEAP) ===" << endl;
     for (int i = 0; i < heap->size; i++) {
-        cout << i + 1 << ". " << heap->data[i].nama 
+        cout << i + 1 << ". " << heap->data[i].nama
              << " - " << heap->data[i].pengurangan << " kg CO2e" << endl;
     }
     cout << "=========================================" << endl;
 }
 
-// --- 5. Fitur Bonus ---
 void hitungTotal(MaxHeap *heap) {
+    if (isEmpty(heap)) {
+        cout << "[Info] Antrian Proyek Kosong." << endl;
+        return;
+    }
+
     long long total = 0;
     for (int i = 0; i < heap->size; i++) {
         total += heap->data[i].pengurangan;
@@ -128,13 +128,18 @@ void hitungTotal(MaxHeap *heap) {
     cout << "\n[BONUS] Total Potensi Reduksi: " << total << " kg CO2e" << endl;
 }
 
-void displayTop5(MaxHeap heapAsli) { 
+void displayTop5(MaxHeap heapAsli) {
+    if (isEmpty(&heapAsli)) {
+        cout << "[Info] Antrian Proyek Kosong." << endl;
+        return;
+    }
+
     cout << "\n[BONUS] Top 5 Proyek Prioritas Tertinggi:" << endl;
     int count = 0;
     while (!isEmpty(&heapAsli) && count < 5) {
         Proyek top = heapAsli.data[0];
         cout << count + 1 << ". " << top.nama << " (" << top.pengurangan << ")" << endl;
-        
+
         heapAsli.data[0] = heapAsli.data[heapAsli.size - 1];
         heapAsli.size--;
         heapifyDown(&heapAsli, 0);
@@ -142,68 +147,21 @@ void displayTop5(MaxHeap heapAsli) {
     }
 }
 
-void saveToFile(MaxHeap *heap) {
-    ofstream file("data_proyek.txt");
-    if (file.is_open()) {
-        file << heap->size << endl; 
-        for (int i = 0; i < heap->size; i++) {
-            file << heap->data[i].pengurangan << endl;
-            file << heap->data[i].nama << endl;
-        }
-        file.close();
-        cout << "[BONUS] Data berhasil disimpan." << endl;
-    } else {
-        cout << "[Error] Gagal membuat file." << endl;
-    }
-}
-
-void loadFromFile(MaxHeap *heap) {
-    ifstream file("data_proyek.txt");
-    if (file.is_open()) {
-        int jumlahData;
-        file >> jumlahData;
-        char namaTemp[100];
-        int nilaiTemp;
-        
-        for (int i = 0; i < jumlahData; i++) {
-            file >> nilaiTemp;
-            file.ignore(); 
-            file.getline(namaTemp, 100);
-            insert(heap, namaTemp, nilaiTemp);
-        }
-        file.close();
-        cout << "[BONUS] Data berhasil dimuat." << endl;
-    } else {
-        cout << "[Error] File tidak ditemukan." << endl;
-    }
-}
-
-// --- MAIN PROGRAM (PERBAIKAN ALUR) ---
-
 int main() {
     MaxHeap heap;
     initHeap(&heap);
 
-    // 1. MEMUAT 6 PROYEK AWAL
-    cout << "Sedang memuat data awal..." << endl;
     insert(&heap, "Pasang panel surya di gedung kuliah", 50000);
     insert(&heap, "Ganti lampu ke LED hemat energi", 20000);
     insert(&heap, "Program tanam pohon di sekitar kampus", 10000);
     insert(&heap, "Kampanye hemat listrik", 5000);
     insert(&heap, "Gunakan sepeda kampus", 15000);
     insert(&heap, "Bangun stasiun pengisian mobil listrik", 30000);
-    
-    cout << "[SUKSES] 6 Proyek Awal Berhasil Dimuat!" << endl;
-
-    // --- PERBAIKAN: Menampilkan seluruh proyek TEPAT sebelum menu dimuat ---
-    displayHeap(&heap); 
-    // -----------------------------------------------------------------------
 
     int pilihan;
     char namaInput[100];
     int nilaiInput;
 
-    // 2. MENU UTAMA (Loop)
     do {
         cout << "\n==============================================" << endl;
         cout << "   SISTEM PRIORITAS PROYEK REDUKSI EMISI      " << endl;
@@ -212,8 +170,9 @@ int main() {
         cout << "2. Lihat Prioritas Tertinggi (Peek)" << endl;
         cout << "3. Ambil Proyek Tertinggi (Extract)" << endl;
         cout << "4. Tampilkan Seluruh Proyek" << endl;
-        cout << "5. FITUR BONUS" << endl;
-        cout << "6. Keluar" << endl;
+        cout << "5. Hitung Total Reduksi" << endl;
+        cout << "6. Top 5 Proyek" << endl;
+        cout << "7. Keluar" << endl;
         cout << "Pilihan > ";
         cin >> pilihan;
 
@@ -222,7 +181,7 @@ int main() {
                 cout << "\n--- Tambah Proyek Baru ---" << endl;
                 cout << "Masukkan Potensi Reduksi: ";
                 cin >> nilaiInput;
-                cin.ignore(); 
+                cin.ignore();
                 cout << "Masukkan Nama Proyek: ";
                 cin.getline(namaInput, 100);
                 insert(&heap, namaInput, nilaiInput);
@@ -242,29 +201,21 @@ int main() {
                 break;
 
             case 5:
-                int bonusPilihan;
-                cout << "\n--- MENU BONUS ---" << endl;
-                cout << "1. Hitung Total Reduksi" << endl;
-                cout << "2. Top 5 Proyek" << endl;
-                cout << "3. Simpan ke File" << endl;
-                cout << "4. Muat dari File" << endl;
-                cout << "Pilihan Bonus > ";
-                cin >> bonusPilihan;
-
-                if (bonusPilihan == 1) hitungTotal(&heap);
-                else if (bonusPilihan == 2) displayTop5(heap); 
-                else if (bonusPilihan == 3) saveToFile(&heap);
-                else if (bonusPilihan == 4) loadFromFile(&heap);
+                hitungTotal(&heap);
                 break;
 
             case 6:
+                displayTop5(heap);
+                break;
+
+            case 7:
                 cout << "Program Selesai." << endl;
                 break;
 
             default:
                 cout << "Pilihan tidak valid!" << endl;
         }
-    } while (pilihan != 6);
+    } while (pilihan != 7);
 
     return 0;
 }
